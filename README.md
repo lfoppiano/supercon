@@ -1,14 +1,15 @@
 # SuperCon2: Automatic extraction of materials and properties from superconductor scientific literature
 
-** Work in Progress**
-
+- [Introduction](#introduction)
+- [Releases](#releases)
+- [Field list](#field-list)
 
 ## Introduction 
+SuperCon 2 is the quantitative database of superconductors materials and properties, created using [grobid-superconductors](https://github.com/lfoppiano/grobid-superconductors).
 
+## Releasees 
 
-## Latest version 
-
-The latest version was extracted on the 2022/12/03. 
+The latest version was extracted on the 2022/12/03 and contains about 40000 records.  
 
 ## Field list
 
