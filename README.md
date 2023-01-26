@@ -43,9 +43,7 @@ journal
 year
 ```
 
-## How to cite
-
-If you use this work please cite our preprint (currently under review): 
+## How to cite 
 
 ```
 @article{doi:10.1080/27660400.2022.2153633,
