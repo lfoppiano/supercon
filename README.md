@@ -9,8 +9,10 @@
 SuperCon 2 is the quantitative database of superconductors materials and properties, created automatically using [grobid-superconductors](https://github.com/lfoppiano/grobid-superconductors) on a set of 37000 from arXiv. 
 
 ## Releasees 
+The latest version is v1.0
 
-The latest version was extracted on the 2022/12/03 and contains about 40000 records.  
+### v1.0
+The latest version is v1.0 and it was extracted on the 2022/12/03 and contains about 40000 records.  
 - `supercon2_v22.12.03.csv` contains the superconductors records. For more information, see the [field list](#field-list), below.
 - `supercon2_1203_papers.csv` contains the list of doi, title, authors for each paper. The data was automatically extracted with [Grobid](https://github.com/kermitt2/grobid) and consolidated using [biblio-glutton](https://github.com/kermitt2/biblio-glutton)
 
@@ -43,7 +45,9 @@ journal
 year
 ```
 
-## How to cite 
+## How to cite
+
+If you use this work please cite our published article: 
 
 ```
 @article{doi:10.1080/27660400.2022.2153633,
