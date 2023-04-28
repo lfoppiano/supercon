@@ -2,11 +2,22 @@ import argparse
 import csv
 import json
 import os
-import re
 from pathlib import Path
 
 import requests
 from pymatgen.core import Composition
+
+### Set up
+
+# Install the requirements.txt
+# Check the grobid-quantities URL
+
+
+grobid_quantities_url = "http://localhost:8060"
+# grobid_quantities_url = "https://lfoppiano-grobid-quantities.hf.space"
+
+normalisation_url = grobid_quantities_url + "/service/parseMeasure"
+quantity_text_url = grobid_quantities_url + "/service/processQuantityText"
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
@@ -19,11 +30,6 @@ if __name__ == '__main__':
 
     input_file = args.input
     output = args.output
-
-    # formula_parser_url = "https://lfoppiano-grobid-superconductors-tools.hf.space/convert/formula/composition"
-    # formula_parser_url = "http://falcon.nims.go.jp/material/nlp/stable/convert/formula/composition"
-    normalisation_url = "http://localhost:8060/service/parseMeasure"
-    quantity_text_url = "http://localhost:8060/service/processQuantityText"
 
     output_path = Path(output)
     if os.path.isdir(str(output)):
@@ -40,8 +46,8 @@ if __name__ == '__main__':
                     continue
                 if first:
                     header = line
-                    header.insert(header.index("criticalTemperature")+1, "criticalTemperatureUnit")
-                    header.insert(header.index("appliedPressure")+1, "appliedPressureUnit")
+                    header.insert(header.index("criticalTemperature") + 1, "criticalTemperatureUnit")
+                    header.insert(header.index("appliedPressure") + 1, "appliedPressureUnit")
                     fw.writerow(header)
                     first = False
                     continue
@@ -57,25 +63,18 @@ if __name__ == '__main__':
                 else:
                     continue
 
-
                 tc = line[header.index("criticalTemperature")]
 
                 if tc:
-                    temp_regex = re.compile(r"^([0-9.]+) ?(m?K{1})$")
-                    found = temp_regex.search(tc)
-                    if found:
-                        value = found.groups()[0]
-                        unit = found.groups()[1]
+                    data = str({'text': tc})
+                    response = requests.post(quantity_text_url, files={"text": data})
 
-                        data = json.dumps({'from': value, 'type': "temperature", 'unit': unit})
-                        response = requests.post(quantity_text_url, data=data)
-
-                        if response.status_code == 200:
-                            parsed_response = json.loads(response.text)
-
+                    if response.status_code == 200:
+                        parsed_response = json.loads(response.text)
+                        if 'measurements' in parsed_response and len(parsed_response['measurements']) == 1 and 'quantity' in parsed_response['measurements'][
+                            0] and 'normalizedUnit' in parsed_response['measurements'][0]['quantity']:
                             normalized_quantity = parsed_response['measurements'][0]['quantity']['normalizedQuantity']
                             normalized_unit = parsed_response['measurements'][0]['quantity']['normalizedUnit']['name']
-
 
                             try:
                                 float_value = float(normalized_quantity)
@@ -88,11 +87,12 @@ if __name__ == '__main__':
                             elif float_value >= 500.0:
                                 # print("Tc value", float_value, "above 500 K, we report and skip. ")
                                 continue
-                            elif value.startswith("-"):
+                            elif float_value < 0:
                                 continue
 
                             line[header.index("criticalTemperature")] = float_value
-                            line.insert(header.index("criticalTemperature")+1, normalized_unit)
+                            line.insert(header.index("criticalTemperature") + 1, normalized_unit)
+
                         else:
                             continue
 
@@ -105,38 +105,32 @@ if __name__ == '__main__':
                 applied_pressure = line[header.index("appliedPressure")]
 
                 if applied_pressure:
-                    temp_regex = re.compile(r"^([0-9.]+) ?(.?(Pa){1})$")
-                    found = temp_regex.search(tc)
-                    if found:
-                        value = found.groups()[0]
-                        unit = found.groups()[1]
+                    if applied_pressure == "ambient pressure":
+                        applied_pressure = "1 atm"
+                    data = str({'text': applied_pressure})
+                    response = requests.post(quantity_text_url, files={"text": data})
 
-                        data = json.dumps({'from': value, 'type': "pressure]", 'unit': unit})
-                        response = requests.post(normalisation_url, data=data)
-
-                        if response.status_code == 200:
-                            parsed_response = json.loads(response.text)
-
+                    if response.status_code == 200:
+                        parsed_response = json.loads(response.text)
+                        if 'measurements' in parsed_response and len(parsed_response['measurements']) == 1 and 'quantity' in parsed_response['measurements'][
+                            0] and 'normalizedUnit' in parsed_response['measurements'][0]['quantity']:
                             normalized_quantity = parsed_response['measurements'][0]['quantity']['normalizedQuantity']
                             normalized_unit = parsed_response['measurements'][0]['quantity']['normalizedUnit']['name']
-
 
                             try:
                                 float_value = float(normalized_quantity)
                             except:
                                 continue
 
-                            if value.startswith("-"):
-                                continue
 
                             line[header.index("appliedPressure")] = float_value
                             line.insert(header.index("appliedPressureUnit"), normalized_unit)
 
+                        else:
+                            line.insert(header.index("appliedPressureUnit"), "")
                     else:
                         line.insert(header.index("appliedPressureUnit"), "")
-
                 else:
                     line.insert(header.index("appliedPressureUnit"), "")
-
 
                 fw.writerow(line)
